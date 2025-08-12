@@ -10,9 +10,10 @@ const port = 3000;
 
 import dotenv from 'dotenv';
 dotenv.config();
-// SECURE way - using environment variables
+
 const db = new pg.Client({
-  connectionString: process.env.DATABASE_URL, // Switches based on environment
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 db.connect();
 
@@ -56,7 +57,16 @@ const createTable = async () => {
   }
 };
 
-createTable();
+// Call it immediately after db connection
+db.connect()
+  .then(() => {
+    console.log("Database connected successfully");
+    return createTable();
+  })
+  .catch(err => {
+    console.error("Database connection error:", err);
+    process.exit(1);
+  });
 
 
 app.post("/add", async (req, res) => {   
