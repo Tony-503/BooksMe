@@ -1,0 +1,236 @@
+<%- include('partials/header.ejs'); -%>
+
+<!-- Add Book Section -->
+<section id="add-book" class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="form-card p-5 shadow-lg">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                        <h2 class="form-title">Add New Book</h2>
+                        <p class="text-muted">Share your latest read with the community</p>
+                    </div>
+                    
+                    <form action="/add" method="POST" class="needs-validation" novalidate>
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control form-control-lg" id="bookName" name="bookName" placeholder="Book Name" required>
+                                    <label for="bookName"><i class="fas fa-book me-2"></i>Book Name</label>
+                                    <div class="invalid-feedback">Please enter a book name.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control form-control-lg" id="recommendation" name="recommendation" min="0" max="10" placeholder="Rating" required>
+                                    <label for="recommendation"><i class="fas fa-star me-2"></i>Rating (0-10)</label>
+                                    <div class="invalid-feedback">Please enter a rating between 0-10.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control form-control-lg" id="date" name="date" required>
+                                    <label for="date"><i class="fas fa-calendar me-2"></i>Date Read</label>
+                                    <div class="invalid-feedback">Please select a date.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 mb-4">
+                                <div class="form-floating">
+                                    <textarea class="form-control" id="description" name="description" style="height: 120px" placeholder="Description" required></textarea>
+                                    <label for="description"><i class="fas fa-edit me-2"></i>Your Review</label>
+                                    <div class="invalid-feedback">Please write a review.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-gradient btn-lg px-5 py-3">
+                                <i class="fas fa-plus-circle me-2"></i>Add Book
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Books List Section -->
+<section id="books-list" class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">
+                <i class="fas fa-book-open me-3 text-primary"></i>My Library
+            </h2>
+            <p class="lead text-muted">Your personal collection of reads</p>
+        </div>
+        
+        <% if (books && books.length > 0) { %>
+            <div class="row">
+                <% books.forEach(book => { %>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="book-card h-100 shadow-sm">
+                        <div class="book-cover-container">
+                            <% if (book.cover_url) { %>
+                                <img src="<%= book.cover_url %>" alt="Book Cover" class="book-cover">
+                            <% } else { %>
+                                <div class="no-cover">
+                                    <i class="fas fa-book fa-3x text-muted"></i>
+                                    <p class="text-muted mt-2">No Cover</p>
+                                </div>
+                            <% } %>
+                            <div class="rating-badge">
+                                <i class="fas fa-star text-warning"></i>
+                                <span><%= book.recommendation %>/10</span>
+                            </div>
+                        </div>
+                        
+                        <div class="book-content p-4">
+                            <h5 class="book-title mb-2" id="title<%= book.id %>"><%= book.title %></h5>
+                            <input id="titleInput<%= book.id %>" type="text" name="bookName" value="<%= book.title %>" class="form-control mb-2" hidden="true" />
+                            
+                            <div class="book-meta mb-3">
+                                <span class="badge bg-primary me-2" id="recommendation<%= book.id %>">
+                                    <i class="fas fa-star me-1"></i><%= book.recommendation %>/10
+                                </span>
+                                <input id="recommendationInput<%= book.id %>" type="number" name="recommendation" value="<%= book.recommendation %>" min="0" max="10" class="form-control " style="width: 80px;" hidden="true" />
+                                
+                                <span class="text-muted" id="date<%= book.id %>">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    <% if (book.date_read) { %>
+                                        <%= new Date(book.date_read).toLocaleDateString() %>
+                                    <% } else { %>
+                                        No Date
+                                    <% } %>
+                                </span>
+                                <input id="dateInput<%= book.id %>" type="date" name="date" value="<%= book.date_read ? book.date_read.toISOString().split('T')[0] : '' %>" class="form-control" hidden="true" />
+                            </div>
+                            
+                            <p class="book-description text-muted" id="description<%= book.id %>">
+                                <%= book.description %>
+                            </p>
+                            <textarea id="descriptionInput<%= book.id %>" name="description" class="form-control" rows="3" hidden="true"><%= book.description %></textarea>
+                            
+                            <div class="book-actions mt-3">
+                                <button id="edit<%= book.id %>" class="btn btn-outline-primary btn-sm" onclick="editHandler('<%= book.id %>')">
+                                    <i class="fas fa-edit me-1"></i>Edit
+                                </button>
+                                
+                                <form id="editForm<%= book.id %>" action="/edit" method="post" style="display:inline;">
+                                    <input type="hidden" name="bookId" value="<%= book.id %>">
+                                    <button id="done<%= book.id %>" class="btn btn-success btn-sm" type="button" onclick="saveHandler('<%= book.id %>')" hidden>
+                                        <i class="fas fa-check me-1"></i>Save
+                                    </button>
+                                    <button id="cancel<%= book.id %>" class="btn btn-secondary btn-sm" type="button" onclick="cancelHandler('<%= book.id %>')" hidden>
+                                        <i class="fas fa-times me-1"></i>Cancel
+                                    </button>
+                                </form>
+                                
+                                <form action="/delete" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this book?')">
+                                    <input type="hidden" name="bookId" value="<%= book.id %>">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <div class="text-center py-5">
+                <i class="fas fa-book-open fa-5x text-muted mb-4"></i>
+                <h4 class="text-muted">No books in your library yet</h4>
+                <p class="text-muted">Start building your collection by adding your first book!</p>
+                <a href="#add-book" class="btn btn-gradient btn-lg">
+                    <i class="fas fa-plus me-2"></i>Add Your First Book
+                </a>
+            </div>
+        <% } %>
+    </div>
+</section>
+<script>
+// Form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Enhanced edit functionality
+function editHandler(bookId) {
+    document.getElementById(`title${bookId}`).style.display = 'none';
+    document.getElementById(`recommendation${bookId}`).style.display = 'none';
+    document.getElementById(`description${bookId}`).style.display = 'none';
+    document.getElementById(`date${bookId}`).style.display = 'none';
+    
+    document.getElementById(`titleInput${bookId}`).hidden = false;
+    document.getElementById(`recommendationInput${bookId}`).hidden = false;
+    document.getElementById(`descriptionInput${bookId}`).hidden = false;
+    document.getElementById(`dateInput${bookId}`).hidden = false;
+    
+    document.getElementById(`edit${bookId}`).style.display = 'none';
+    document.getElementById(`done${bookId}`).hidden = false;
+    document.getElementById(`cancel${bookId}`).hidden = false;
+    
+    document.getElementById(`titleInput${bookId}`).focus();
+}
+
+function saveHandler(bookId) {
+    const form = document.getElementById(`editForm${bookId}`);
+    const bookName = document.getElementById(`titleInput${bookId}`).value;
+    const recommendation = document.getElementById(`recommendationInput${bookId}`).value;
+    const description = document.getElementById(`descriptionInput${bookId}`).value;
+    const date = document.getElementById(`dateInput${bookId}`).value;
+    
+    form.innerHTML += `<input type="hidden" name="bookName" value="${bookName}">`;
+    form.innerHTML += `<input type="hidden" name="recommendation" value="${recommendation}">`;
+    form.innerHTML += `<input type="hidden" name="description" value="${description}">`;
+    form.innerHTML += `<input type="hidden" name="date" value="${date}">`;
+    
+    form.submit();
+}
+
+function cancelHandler(bookId) {
+    document.getElementById(`title${bookId}`).style.display = 'block';
+    document.getElementById(`recommendation${bookId}`).style.display = 'inline-block';
+    document.getElementById(`description${bookId}`).style.display = 'block';
+    document.getElementById(`date${bookId}`).style.display = 'inline';
+    
+    document.getElementById(`titleInput${bookId}`).hidden = true;
+    document.getElementById(`recommendationInput${bookId}`).hidden = true;
+    document.getElementById(`descriptionInput${bookId}`).hidden = true;
+    document.getElementById(`dateInput${bookId}`).hidden = true;
+    
+    document.getElementById(`edit${bookId}`).style.display = 'inline-block';
+    document.getElementById(`done${bookId}`).hidden = true;
+    document.getElementById(`cancel${bookId}`).hidden = true;
+}
+
+// Smooth scrolling for navigation links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+</script>
+
+<%- include('partials/footer.ejs'); -%>
