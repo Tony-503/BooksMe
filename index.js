@@ -12,13 +12,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 // SECURE way - using environment variables
 const db = new pg.Client({
-  connectionString: process.env.DATABASE_URL,
-  // OR use individual environment variables:
-  // user: process.env.DB_USER,
-  // host: process.env.DB_HOST,
-  // database: process.env.DB_NAME,
-  // password: process.env.DB_PASSWORD,
-  // port: process.env.DB_PORT,
+  connectionString: process.env.DATABASE_URL, // Switches based on environment
 });
 db.connect();
 
