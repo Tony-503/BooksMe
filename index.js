@@ -41,6 +41,30 @@ app.get("/", async (req, res) => {
   }
 });
 
+
+// Add this after db.connect();
+const createTable = async () => {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS books (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        recommendation INTEGER CHECK (recommendation >= 0 AND recommendation <= 10),
+        description TEXT,
+        date_read DATE,
+        cover_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log("Books table ready!");
+  } catch (error) {
+    console.error("Error creating table:", error);
+  }
+};
+
+createTable();
+
+
 app.post("/add", async (req, res) => {   
   // Add your logic here
   const { bookName, recommendation, description, date } = req.body;
