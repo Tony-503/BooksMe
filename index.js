@@ -2,42 +2,20 @@ import express from "express";
 import bodyParser from "body-parser";
 import axios from "axios";
 import pg from "pg";
-
-const app = express();
-const port = 3000;
-
-
-
 import dotenv from 'dotenv';
+
 dotenv.config();
 
+const app = express();
+const port = process.env.PORT || 3000; // Fix this line
+
+// Database connection with proper error handling
 const db = new pg.Client({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
-db.connect();
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
-
-app.set("view engine", "ejs");
-app.set("views", "./views");
-
-app.get("/", async (req, res) => {  
-  try {
-    // Get all books from database
-    const result = await db.query("SELECT * FROM books ORDER BY created_at DESC");
-    const books = result.rows;
-    
-    res.render("index.ejs", { books: books });
-  } catch (error) {
-    console.error("Error fetching books:", error);
-    res.render("index.ejs", { books: [] });
-  }
-});
-
-
-// Add this after db.connect();
+// Create table function
 const createTable = async () => {
   try {
     await db.query(`
@@ -57,17 +35,38 @@ const createTable = async () => {
   }
 };
 
-// Call it immediately after db connection
-db.connect()
-  .then(() => {
+// Connect to database and create table
+const initializeDatabase = async () => {
+  try {
+    await db.connect();
     console.log("Database connected successfully");
-    return createTable();
-  })
-  .catch(err => {
-    console.error("Database connection error:", err);
+    await createTable();
+  } catch (error) {
+    console.error("Database initialization error:", error);
     process.exit(1);
-  });
+  }
+};
 
+// Initialize database before starting server
+initializeDatabase();
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+app.set("view engine", "ejs");
+app.set("views", "./views");
+
+// Routes
+app.get("/", async (req, res) => {  
+  try {
+    const result = await db.query("SELECT * FROM books ORDER BY created_at DESC");
+    const books = result.rows;
+    res.render("index.ejs", { books: books });
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    res.render("index.ejs", { books: [] });
+  }
+});
 
 app.post("/add", async (req, res) => {   
   // Add your logic here
